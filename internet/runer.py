@@ -44,24 +44,38 @@ def generate_result(response):
                 result['unknown'][act_id]['surname'] = item['last_name']
             
     
+class ResultPrinter:
+    def __init__(self, is_wide):
+        self.is_wide = is_wide  
 
-def print_result():
-    for region in result:
+
+    def print_result(self, result):
+        for region in result:
+            self.print_region(region)
+            if self.is_wide:
+                self.print_activists(result[region])
+
+    def print_region(self, region):
         print region
-        for act_id in result[region]:
-            act = result[region][act_id]
-            print  act_id, act['name'], act['surname'], act['fathername']
-        print ''
+    
+    def print_activists(self, activists):
+        for act_id in activists:
+            act = activists[act_id]
+            print  '    ', act_id, act['name'], act['surname'], act['fathername']
 
+    
+
+result_printer = ResultPrinter(True)
 load_activists()
 auth_token = get_auth_hash()
-group_id = raw_input('input group_id:')
-item_id = raw_input('input item_id:')
+#group_id = raw_input('input group_id:')
+#item_id = raw_input('input item_id:')
+group_id = '120214657'
+item_id = '275'
 url = "https://api.vk.com/method/likes.getList?type=post&owner_id=-"+group_id+"&item_id="+item_id+"&oauth=1&v=5.52&access_token="+auth_token+"&extended=true"
 response = requests.get(url)
-print response.text
 generate_result(response.text)
-print_result()
+result_printer.print_result(result)
 
 
             
