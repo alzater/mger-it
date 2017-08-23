@@ -47,16 +47,27 @@ def generate_result(response):
 class ResultPrinter:
     def __init__(self, is_wide):
         self.is_wide = is_wide  
+        self.load_region_info()
 
+    def load_region_info(self):
+        self.region_info = {}
+        with open('region_info.csv', 'r') as csvfile:
+            csv_reader = csv.reader(csvfile)
+            for row in csv_reader:
+                self.region_info[row[0]] = row[1]           
 
     def print_result(self, result):
         for region in result:
-            self.print_region(region)
+            self.print_region(region, len(result[region]))
             if self.is_wide:
                 self.print_activists(result[region])
 
-    def print_region(self, region):
-        print region
+    def print_region(self, region, count):
+        info = ""
+        if self.region_info.get(region) != None:
+            info = self.region_info[region]
+    
+        print '('+str(count)+')', region, (' - ' + info if info != "" else "")
     
     def print_activists(self, activists):
         for act_id in activists:
