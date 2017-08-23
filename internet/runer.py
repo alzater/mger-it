@@ -12,13 +12,18 @@ def load_activists():
     with open('activists.csv', 'r') as csvfile:
         csv_reader = csv.reader(csvfile)
         for row in csv_reader:
-            result[row[1]] = {}
             activists[row[0]] = {}
             act = activists[row[0]]
             act['region'] = row[1]
             act['name'] = row[2]
             act['surname'] = row[3]
             act['fathername'] = row[4]
+
+def init_result():
+    result.clear()
+    result['unknown'] = {}
+    for act in activists:
+        result[activists[act]['region']] = {}
 
 
 def get_auth_hash():
@@ -28,10 +33,11 @@ def get_auth_hash():
 
 def generate_result(response):
     js_response = json.loads(response)
-    items = js_response["response"]["items"]
+    if js_response["response"].get("profiles") != None:
+        items = js_response["response"]["profiles"]
+    else:
+        items = js_response["response"]["items"]
     for item in items:
-        if item["type"] != 'profile':
-            continue
         act_id = str(item['id'])
         if act_id in activists:
             act = activists[act_id]
@@ -82,13 +88,21 @@ auth_token = get_auth_hash()
 #group_id = raw_input('input group_id:')
 #item_id = raw_input('input item_id:')
 group_id = '120214657'
-item_id = '275'
+item_id = '273'
+
+init_result()
 url = "https://api.vk.com/method/likes.getList?type=post&owner_id=-"+group_id+"&item_id="+item_id+"&oauth=1&v=5.52&access_token="+auth_token+"&extended=true"
 response = requests.get(url)
 generate_result(response.text)
+print "--------------likes--------------"
 result_printer.print_result(result)
 
-
+init_result()
+url = "https://api.vk.com/method/wall.getReposts?&owner_id=-"+group_id+"&post_id="+item_id+"&oauth=1&v=5.52&access_token="+auth_token
+response = requests.get(url)
+generate_result(response.text)
+print "--------------reposts--------------"
+result_printer.print_result(result)
             
     
 
