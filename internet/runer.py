@@ -48,7 +48,14 @@ def generate_result(response):
                 result['unknown'][act_id]['name'] = item['first_name']
             if item.get('last_name'):
                 result['unknown'][act_id]['surname'] = item['last_name']
-            
+
+def make_report(url):
+    init_result()
+    response = requests.get(url)
+    generate_result(response.text)
+    print "--------------likes--------------"
+    result_printer.print_result(result)     
+
     
 class ResultPrinter:
     def __init__(self, is_wide):
@@ -88,21 +95,15 @@ auth_token = get_auth_hash()
 #group_id = raw_input('input group_id:')
 #item_id = raw_input('input item_id:')
 group_id = '120214657'
-item_id = '273'
+item_id = '274'
 
-init_result()
+
 url = "https://api.vk.com/method/likes.getList?type=post&owner_id=-"+group_id+"&item_id="+item_id+"&oauth=1&v=5.52&access_token="+auth_token+"&extended=true"
-response = requests.get(url)
-generate_result(response.text)
-print "--------------likes--------------"
-result_printer.print_result(result)
+make_report(url)
 
-init_result()
 url = "https://api.vk.com/method/wall.getReposts?&owner_id=-"+group_id+"&post_id="+item_id+"&oauth=1&v=5.52&access_token="+auth_token
-response = requests.get(url)
-generate_result(response.text)
-print "--------------reposts--------------"
-result_printer.print_result(result)
+make_report(url)
+
             
     
 
