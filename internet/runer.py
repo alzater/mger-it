@@ -2,6 +2,7 @@
 import requests
 import json
 import csv
+import re
 
 
 
@@ -46,10 +47,13 @@ class Report:
         self.result_printer.print_result(self.result)     
 
     def input_data(self):
-        #group_id = raw_input('input group_id:')
-        #item_id = raw_input('input item_id:')
-        self.group_id = '120214657'
-        self.item_id = '274' 
+        url = raw_input('input post url:')
+        m = re.match(r".*wall(?P<group_id>\w+)_(?P<item_id>\w+)", url)
+        self.group_id = m.group('group_id')
+        self.item_id = m.group('item_id')
+
+        #self.group_id = '120214657'
+        #self.item_id = '274' 
   
     def make_report(self):
         self.result_printer = ResultPrinter(self.region_info)
@@ -102,7 +106,7 @@ class ResultPrinter:
     def print_result(self, result):
         for region in result:
             self.print_region(region, len(result[region]))
-            if self.is_wide:
+            if self.is_wide or region == 'unknown':
                 self.print_activists(result[region])
 
     def print_region(self, region, count):
@@ -115,7 +119,7 @@ class ResultPrinter:
     def print_activists(self, activists):
         for act_id in activists:
             act = activists[act_id]
-            print  '    ', act_id, act['name'], act['surname'], act['fathername']
+            print  '. . . ', act_id, act['name'], act['surname'], act['fathername']
 
     
 report = Report()
