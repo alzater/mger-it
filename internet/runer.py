@@ -10,7 +10,9 @@ class Report:
         data_loader = DataLoader()
         self.api = data_loader.get_api()
         self.activists = data_loader.load_activists()
-        self.region_info = data_loader.load_region_info()   
+
+        region_info = data_loader.load_region_info()
+        self.result_printer = ResultPrinter(region_info)  
 
     def init_result(self):
         result = {}
@@ -19,19 +21,27 @@ class Report:
             result[self.activists[act]['region']] = {}
         return result
 
+    def add_unknown_activist(self, result, user):
+        act_id = str(user['uid'])
+        result['unknown'][act_id] = { 'name' : '', 'surname': '', 'fathername': ''}
+        if user.get('first_name'):
+            result['unknown'][act_id]['name'] = user['first_name']
+        if user.get('last_name'):
+            result['unknown'][act_id]['surname'] = user['last_name']
+
     def generate_result(self, users):
         result = self.init_result()
         for user in users:
             act_id = str(user['uid'])
             if act_id in self.activists:
                 act = self.activists[act_id]
-                result[act['region']][act_id] = { 'name' : act['name'], 'surname': act['surname'], 'fathername': act['fathername']}
+                result[act['region']][act_id] = { 
+                        'name' : act['name'], 
+                        'surname': act['surname'], 
+                        'fathername': act['fathername']
+                    }
             else:
-                result['unknown'][act_id] = { 'name' : '', 'surname': '', 'fathername': ''}
-                if user.get('first_name'):
-                    result['unknown'][act_id]['name'] = user['first_name']
-                if user.get('last_name'):
-                    result['unknown'][act_id]['surname'] = user['last_name']
+                self.add_unknown_activist(result, user)
         return result
 
     def make_report_part(self, rtype):
@@ -60,12 +70,8 @@ class Report:
         m = re.match(r".*wall(?P<group_id>[\w-]+)_(?P<item_id>\w+)", url)
         self.group_id = m.group('group_id')
         self.item_id = m.group('item_id')
-
-        #self.group_id = '-120214657'
-        #self.item_id = '283' 
   
     def make_report(self):
-        self.result_printer = ResultPrinter(self.region_info)
         self.make_report_part("likes")
         self.make_report_part("reposts")
 
