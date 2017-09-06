@@ -3,12 +3,12 @@ import requests
 import json
 import csv
 import re
-
+import vk
 
 class Report:
     def __init__(self):
         data_loader = DataLoader()
-        self.auth_token = data_loader.get_auth_hash()
+        self.api = data_loader.get_api()
         self.activists = data_loader.load_activists()
         self.region_info = data_loader.load_region_info()   
         self.result = {}
@@ -19,43 +19,38 @@ class Report:
         for act in self.activists:
             self.result[self.activists[act]['region']] = {}
 
-    def generate_result(self, response):
-        js_response = json.loads(response)
-        if js_response["response"].get("profiles") != None:
-            items = js_response["response"]["profiles"]
-        else:
-            items = js_response["response"]["items"]
-
-        for item in items:
-            act_id = str(item['id'])
+    def generate_result(self, users):
+        for user in users:
+            act_id = str(user['uid'])
             if act_id in self.activists:
                 act = self.activists[act_id]
                 self.result[act['region']][act_id] = { 'name' : act['name'], 'surname': act['surname'], 'fathername': act['fathername']}
             else:
                 self.result['unknown'][act_id] = { 'name' : '', 'surname': '', 'fathername': ''}
-                if item.get('first_name'):
-                    self.result['unknown'][act_id]['name'] = item['first_name']
-                if item.get('last_name'):
-                    self.result['unknown'][act_id]['surname'] = item['last_name']
+                if user.get('first_name'):
+                    self.result['unknown'][act_id]['name'] = user['first_name']
+                if user.get('last_name'):
+                    self.result['unknown'][act_id]['surname'] = user['last_name']
 
     def make_report_part(self, rtype):
         self.init_result()
         if rtype == 'likes':
-            response = self.get_likes()
+            users = self.get_likes()
         else:
-            response = self.get_reposts()
-        self.generate_result(response.text)
+            users = self.get_reposts()
+        self.generate_result(users)
         print "--------------"+rtype+"--------------"
         self.result_printer.print_result(self.result)  
 
     def get_likes(self):
-        url = "https://api.vk.com/method/likes.getList?type=post&owner_id="+self.group_id+"&item_id="+self.item_id+"&oauth=1&v=5.52&access_token="+self.auth_token+"&extended=true"
-        return requests.get(url)
-
+        response = self.api.likes.getList(type="post", owner_id=self.group_id, item_id=self.item_id, extended="1")
+        users = response['items']
+        return users
 
     def get_reposts(self):
-        url = "https://api.vk.com/method/wall.getReposts?&owner_id="+self.group_id+"&post_id="+self.item_id+"&oauth=1&v=5.52&access_token="+ self.auth_token  
-        return requests.get(url) 
+        response = self.api.wall.getReposts(type="post", owner_id=self.group_id, post_id=self.item_id)
+        result = response['profiles']
+        return result 
 
     def input_data(self):
         url = raw_input('input post url: ')
@@ -63,8 +58,8 @@ class Report:
         self.group_id = m.group('group_id')
         self.item_id = m.group('item_id')
 
-        #self.group_id = '120214657'
-        #self.item_id = '274' 
+        #self.group_id = '-120214657'
+        #self.item_id = '283' 
   
     def make_report(self):
         self.result_printer = ResultPrinter(self.region_info)
@@ -97,9 +92,16 @@ class DataLoader:
                 region_info[row[0]] = row[1] 
         return region_info
 
-    def get_auth_hash(self):
+    def get_api(self):
+        print "start auth"
         f = open('auth.txt', 'r')
-        return f.readline()[:-1]
+        login = f.readline()[:-1]
+        password = f.readline()[:-1]
+        session = vk.AuthSession(app_id='6131487', user_login=login, user_password=password)
+        api = vk.API(session)
+   
+        print "auth OK"
+        return api
 
     
 class ResultPrinter:
