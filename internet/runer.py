@@ -11,36 +11,39 @@ class Report:
         self.api = data_loader.get_api()
         self.activists = data_loader.load_activists()
         self.region_info = data_loader.load_region_info()   
-        self.result = {}
 
     def init_result(self):
-        self.result.clear()
-        self.result['unknown'] = {}
+        result = {}
+        result['unknown'] = {}
         for act in self.activists:
-            self.result[self.activists[act]['region']] = {}
+            result[self.activists[act]['region']] = {}
+        return result
 
     def generate_result(self, users):
+        result = self.init_result()
         for user in users:
             act_id = str(user['uid'])
             if act_id in self.activists:
                 act = self.activists[act_id]
-                self.result[act['region']][act_id] = { 'name' : act['name'], 'surname': act['surname'], 'fathername': act['fathername']}
+                result[act['region']][act_id] = { 'name' : act['name'], 'surname': act['surname'], 'fathername': act['fathername']}
             else:
-                self.result['unknown'][act_id] = { 'name' : '', 'surname': '', 'fathername': ''}
+                result['unknown'][act_id] = { 'name' : '', 'surname': '', 'fathername': ''}
                 if user.get('first_name'):
-                    self.result['unknown'][act_id]['name'] = user['first_name']
+                    result['unknown'][act_id]['name'] = user['first_name']
                 if user.get('last_name'):
-                    self.result['unknown'][act_id]['surname'] = user['last_name']
+                    result['unknown'][act_id]['surname'] = user['last_name']
+        return result
 
     def make_report_part(self, rtype):
-        self.init_result()
         if rtype == 'likes':
             users = self.get_likes()
         else:
             users = self.get_reposts()
-        self.generate_result(users)
+
+        result = self.generate_result(users)
+
         print "--------------"+rtype+"--------------"
-        self.result_printer.print_result(self.result)  
+        self.result_printer.print_result(result)  
 
     def get_likes(self):
         response = self.api.likes.getList(type="post", owner_id=self.group_id, item_id=self.item_id, extended="1")
