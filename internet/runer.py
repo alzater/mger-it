@@ -5,7 +5,6 @@ import csv
 import re
 
 
-
 class Report:
     def __init__(self):
         data_loader = DataLoader()
@@ -39,16 +38,28 @@ class Report:
                 if item.get('last_name'):
                     self.result['unknown'][act_id]['surname'] = item['last_name']
 
-    def make_report_part(self, url):
+    def make_report_part(self, rtype):
         self.init_result()
-        response = requests.get(url)
+        if rtype == 'likes':
+            response = self.get_likes()
+        else:
+            response = self.get_reposts()
         self.generate_result(response.text)
-        print "--------------likes--------------"
-        self.result_printer.print_result(self.result)     
+        print "--------------"+rtype+"--------------"
+        self.result_printer.print_result(self.result)  
+
+    def get_likes(self):
+        url = "https://api.vk.com/method/likes.getList?type=post&owner_id="+self.group_id+"&item_id="+self.item_id+"&oauth=1&v=5.52&access_token="+self.auth_token+"&extended=true"
+        return requests.get(url)
+
+
+    def get_reposts(self):
+        url = "https://api.vk.com/method/wall.getReposts?&owner_id="+self.group_id+"&post_id="+self.item_id+"&oauth=1&v=5.52&access_token="+ self.auth_token  
+        return requests.get(url) 
 
     def input_data(self):
-        url = raw_input('input post url:')
-        m = re.match(r".*wall(?P<group_id>\w+)_(?P<item_id>\w+)", url)
+        url = raw_input('input post url: ')
+        m = re.match(r".*wall(?P<group_id>[\w-]+)_(?P<item_id>\w+)", url)
         self.group_id = m.group('group_id')
         self.item_id = m.group('item_id')
 
@@ -57,12 +68,8 @@ class Report:
   
     def make_report(self):
         self.result_printer = ResultPrinter(self.region_info)
-
-        url = "https://api.vk.com/method/likes.getList?type=post&owner_id=-"+self.group_id+"&item_id="+self.item_id+"&oauth=1&v=5.52&access_token="+self.auth_token+"&extended=true"
-        self.make_report_part(url)
-
-        url = "https://api.vk.com/method/wall.getReposts?&owner_id=-"+self.group_id+"&post_id="+self.item_id+"&oauth=1&v=5.52&access_token="+ self.auth_token
-        self.make_report_part(url)
+        self.make_report_part("likes")
+        self.make_report_part("reposts")
 
 
 class DataLoader:
